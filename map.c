@@ -24,8 +24,8 @@ struct Map_t {
     int iterator;
 };
 
-static MapResult addOrDestroy(Map map,const keyValue* element) {
-    MapResult result = mapAdd(map, element);
+static MapResult addOrDestroy(Map map,const keyValue element) {
+    MapResult result = mapPut(map, element->key,element->value);
     if (result == MAP_OUT_OF_MEMORY) {
         mapDestroy(map);
     }
@@ -102,14 +102,9 @@ Map mapCreate() {
 }
 
 void mapDestroy(Map map){
-    if (map==NULL){
-        return;
-    }
-    while(mapGetSize(map) > 0) {
-        mapRemove(map, mapGetFirst(map));
-        }
-        free(map->elements);
+    if(mapClear(map) != MAP_NULL_ARGUMENT){
         free(map);
+    }  
 }
 
 Map mapCopy(Map map) {
@@ -128,7 +123,7 @@ Map mapCopy(Map map) {
 }
 
 int mapGetSize(Map map) {
-    if(map==NULL){
+    if(map == NULL){
         return ELEMENT_NOT_FOUND;
     }
     return map->size;
@@ -149,6 +144,7 @@ MapResult mapPut(Map map, const char* key, const char* data) {
     if (index != ELEMENT_NOT_FOUND) {
         keyValue element = map->elements[index]; 
         element->value = data;
+        return MAP_SUCCESS;
     }
     if (map->size == map->max_size) {
         if (expand(map) == MAP_OUT_OF_MEMORY) {
@@ -194,14 +190,25 @@ char* mapGetFirst(Map map){
 }
 
 char* mapGetNext(Map map){
-    if(map == NULL){
+    if(map == NULL || map->iterator >= map->size){
         return NULL;
     }
-    if(map->iterator >= map->size){
-        return NULL;
-    }
+    keyValue element = map->elements[map->iterator];
+    map->iterator++;
+    return element->key;
 }
 
-int main(){
-    printf("hjcvwvecgyu");
+MapResult mapClear(Map map){
+    if(map == NULL){
+        return MAP_NULL_ARGUMENT;
+    }
+    while(mapGetSize(map) > 0) {
+        MapResult result=mapRemove(map, mapGetFirst(map));
+        if(result != MAP_SUCCESS ){
+            return MAP_ERROR;
+        }
+    }
+    free(map->elements);
+    return MAP_SUCCESS;   
 }
+
