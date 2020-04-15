@@ -157,3 +157,51 @@ MapResult mapPut(Map map, const char* key, const char* data) {
     }
     return createKeyValue(map, key ,data);
 }
+
+char* mapGet(Map map, const char* key){
+    if(map == NULL || key == NULL){
+        return NULL;
+    }
+    int index=mapFind(map,key);
+    if(index==ELEMENT_NOT_FOUND){
+        return NULL;
+    }
+    keyValue element=map->elements[index];
+    return element->value;
+}    
+
+MapResult mapRemove(Map map, const char* key){
+    if(map == NULL || key == NULL){
+        return MAP_NULL_ARGUMENT;
+    }
+    int index=mapFind(map,key);
+    if(index==ELEMENT_NOT_FOUND){
+        return MAP_ITEM_DOES_NOT_EXIST;
+    }
+    free(map->elements[index]);
+    map->elements[index] = map->elements[map->size - 1];
+
+    map->size--;
+    return MAP_SUCCESS;    
+}
+
+char* mapGetFirst(Map map){
+    if(map == NULL){
+        return NULL;
+    }
+    map->iterator=0;
+    return mapGetNext(map);
+}
+
+char* mapGetNext(Map map){
+    if(map == NULL){
+        return NULL;
+    }
+    if(map->iterator >= map->size){
+        return NULL;
+    }
+}
+
+int main(){
+    printf("hjcvwvecgyu");
+}
