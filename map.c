@@ -16,16 +16,25 @@ typedef struct KeyValue {
     char* value;
 } *keyValue;
 
-
 struct Map_t {
-    keyValue** elements;
+    keyValue* elements;
     int size;
     int max_size;
     int iterator;
 };
 
-static MapResult addOrDestroy(Map map,const keyValue element) {
-    MapResult result = mapPut(map, element->key,element->value);
+static char* copyString(const char* str) {
+    char* newStr = malloc(strlen(str) + 1);
+    if (newStr == NULL){
+        return NULL;
+    }
+    return strcpy(newStr, str);
+}
+
+static MapResult addOrDestroy(Map map,keyValue element) {
+    char* tmp_key = copyString(element->key);
+    char* tmp_value = copyString(element->value);
+    MapResult result = mapPut(map, tmp_key,tmp_value);
     if (result == MAP_OUT_OF_MEMORY) {
         mapDestroy(map);
     }
@@ -34,7 +43,8 @@ static MapResult addOrDestroy(Map map,const keyValue element) {
 
 static MapResult addAllOrDestroy(Map map, Map toAdd) {
 for (int i = 0; i < toAdd->size; ++i) {
-    if (addOrDestroy(map, toAdd->elements[i]) == MAP_OUT_OF_MEMORY) {
+    keyValue element=toAdd->elements[i];
+    if (addOrDestroy(map,element ) == MAP_OUT_OF_MEMORY) {
         return MAP_OUT_OF_MEMORY;
     }
 }
@@ -53,7 +63,7 @@ static int mapFind(Map map, const char* key) {
 
 static MapResult expand(Map map) {
     int new_size = EXPAND_FACTOR * map->max_size;
-    keyValue** newElements = realloc(map->elements, new_size * sizeof(keyValue*));
+    keyValue* newElements = realloc(map->elements, new_size * sizeof(keyValue));
     if (newElements == NULL) {
         return MAP_OUT_OF_MEMORY;
     }
@@ -62,25 +72,13 @@ static MapResult expand(Map map) {
     return MAP_SUCCESS;
 }
 
-static char* copyString(const char* str) {
-    char* newStr = malloc(strlen(str) + 1);
-    if (newStr == NULL){
-        return NULL;
-    } 
-    return strcpy(newStr, str);
-} 
-
 static MapResult createKeyValue(Map map, const char* key, const char* data) {
     // we use this function inside another one that checks for null arguments
-    assert(map != NULL && key != NULL && data != NULL);
-    char* new_key = copyString(key);
-    char* new_value = copyString(data);
-    if (new_key == NULL || new_value == NULL) {
-        return MAP_OUT_OF_MEMORY;
-    }
-    keyValue element = map->elements[map->size];
-    element->key = key;
-    element->value = data;
+    assert(map != NULL && data != NULL && key != NULL);
+    int index = map->size;
+    map->elements[index] = malloc(sizeof(map->elements[index])); // allocates space for the keyValue obj
+    map->elements[index]->key = copyString(key);
+    map->elements[index]->value = copyString(data);
     map->size++;
     return MAP_SUCCESS;
 }
@@ -90,14 +88,14 @@ Map mapCreate() {
     if (map == NULL) {
         return NULL;
     }
-    map->elements = malloc(INITIAL_SIZE * sizeof(keyValue*));
+    map->elements = malloc(INITIAL_SIZE * sizeof(keyValue));
     if (map->elements == NULL) {
         free(map);
         return NULL;
     }
-
     map->size = 0;
     map->max_size = INITIAL_SIZE;
+    map->iterator = 0;
     return map;
 }
 
@@ -142,8 +140,7 @@ MapResult mapPut(Map map, const char* key, const char* data) {
     }
     int index = mapFind(map,key);
     if (index != ELEMENT_NOT_FOUND) {
-        keyValue element = map->elements[index]; 
-        element->value = data;
+        map->elements[index]->value = copyString(data); //assigning the requested data to the value corresponds to the key
         return MAP_SUCCESS;
     }
     if (map->size == map->max_size) {
@@ -151,7 +148,7 @@ MapResult mapPut(Map map, const char* key, const char* data) {
             return MAP_OUT_OF_MEMORY;
         }
     }
-    return createKeyValue(map, key ,data);
+    return createKeyValue(map, key ,data); //creates a new key-value
 }
 
 char* mapGet(Map map, const char* key){
@@ -174,10 +171,9 @@ MapResult mapRemove(Map map, const char* key){
     if(index==ELEMENT_NOT_FOUND){
         return MAP_ITEM_DOES_NOT_EXIST;
     }
-    free(map->elements[index]);
-    map->elements[index] = map->elements[map->size - 1];
-
-    map->size--;
+    free(map->elements[index]); //removing the key-value
+    map->elements[index] = map->elements[map->size - 1]; 
+    map->size--; //set the size to the current size
     return MAP_SUCCESS;    
 }
 
@@ -211,4 +207,3 @@ MapResult mapClear(Map map){
     free(map->elements);
     return MAP_SUCCESS;   
 }
-
