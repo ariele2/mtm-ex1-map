@@ -171,7 +171,8 @@ MapResult mapRemove(Map map, const char* key){
     if(index==ELEMENT_NOT_FOUND){
         return MAP_ITEM_DOES_NOT_EXIST;
     }
-    free(map->elements[index]); //removing the key-value
+    free(map->elements[index]->key); //removing the key-value
+    free(map->elements[index]->value); //removing the key-value
     map->elements[index] = map->elements[map->size - 1]; 
     map->size--; //set the size to the current size
     return MAP_SUCCESS;    
