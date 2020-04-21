@@ -1,4 +1,5 @@
 #include "map.h"
+#include "keyValue.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -11,13 +12,8 @@
 /** The pointer points on NULL argument or if the element was not found**/
 #define ELEMENT_NOT_FOUND -1
 
-typedef struct KeyValue {
-    char* key;
-    char* value;
-} *keyValue;
-
 struct Map_t {
-    keyValue* elements;
+    KeyValue* elements;
     int size;
     int max_size;
     int iterator;
@@ -31,10 +27,12 @@ static char* copyString(const char* str) {
     return strcpy(newStr, str);
 }
 
-static MapResult addOrDestroy(Map map,keyValue element) {
-    char* tmp_key = copyString(element->key);
-    char* tmp_value = copyString(element->value);
+static MapResult addOrDestroy(Map map,KeyValue element) {
+    char* tmp_key = copyString(keyGet(element));
+    char* tmp_value = copyString(valueGet(element));
     MapResult result = mapPut(map, tmp_key,tmp_value);
+    free(tmp_key);
+    free(tmp_value);
     if (result == MAP_OUT_OF_MEMORY) {
         mapDestroy(map);
     }
@@ -43,7 +41,7 @@ static MapResult addOrDestroy(Map map,keyValue element) {
 
 static MapResult addAllOrDestroy(Map map, Map toAdd) {
 for (int i = 0; i < toAdd->size; ++i) {
-    keyValue element=toAdd->elements[i];
+    KeyValue element=toAdd->elements[i];
     if (addOrDestroy(map,element ) == MAP_OUT_OF_MEMORY) {
         return MAP_OUT_OF_MEMORY;
     }
@@ -53,17 +51,17 @@ for (int i = 0; i < toAdd->size; ++i) {
 
 static int mapFind(Map map, const char* key) {
     for (int i = 0; i < map->size; i++) {
-        keyValue element = map->elements[i];
-        if (strcmp(element->key, key) == 0) {
+        //KeyValue element = map->elements[i];
+        if (strcmp(keyGet(map->elements[i]), key) == 0) {
             return i;
+        }
     }
-}
  return ELEMENT_NOT_FOUND;
 }
 
 static MapResult expand(Map map) {
     int new_size = EXPAND_FACTOR * map->max_size;
-    keyValue* newElements = realloc(map->elements, new_size * sizeof(keyValue));
+    KeyValue* newElements = realloc(map->elements, new_size * sizeof(KeyValue));
     if (newElements == NULL) {
         return MAP_OUT_OF_MEMORY;
     }
@@ -72,23 +70,12 @@ static MapResult expand(Map map) {
     return MAP_SUCCESS;
 }
 
-static MapResult createKeyValue(Map map, const char* key, const char* data) {
-    // we use this function inside another one that checks for null arguments
-    assert(map != NULL && data != NULL && key != NULL);
-    int index = map->size;
-    map->elements[index] = malloc(sizeof(map->elements[index])); // allocates space for the keyValue obj
-    map->elements[index]->key = copyString(key);
-    map->elements[index]->value = copyString(data);
-    map->size++;
-    return MAP_SUCCESS;
-}
-
 Map mapCreate() {
     Map map = malloc(sizeof(*map));
     if (map == NULL) {
         return NULL;
     }
-    map->elements = malloc(INITIAL_SIZE * sizeof(keyValue));
+    map->elements = malloc(INITIAL_SIZE * sizeof(KeyValue));
     if (map->elements == NULL) {
         free(map);
         return NULL;
@@ -101,6 +88,7 @@ Map mapCreate() {
 
 void mapDestroy(Map map){
     if(mapClear(map) != MAP_NULL_ARGUMENT){
+        free(map->elements);
         free(map);
     }  
 }
@@ -140,7 +128,10 @@ MapResult mapPut(Map map, const char* key, const char* data) {
     }
     int index = mapFind(map,key);
     if (index != ELEMENT_NOT_FOUND) {
-        map->elements[index]->value = copyString(data); //assigning the requested data to the value corresponds to the key
+        KeyValueResult result = valueSet(map->elements[index], data);
+        if (result == KEY_VALUE_NULL_ARGUMENT) {
+            return MAP_NULL_ARGUMENT;
+        }
         return MAP_SUCCESS;
     }
     if (map->size == map->max_size) {
@@ -148,7 +139,18 @@ MapResult mapPut(Map map, const char* key, const char* data) {
             return MAP_OUT_OF_MEMORY;
         }
     }
-    return createKeyValue(map, key ,data); //creates a new key-value
+    map->elements[map->size] = keyValueCreate();
+    if (keySet(map->elements[map->size], key) == KEY_VALUE_NULL_ARGUMENT) {
+        free(map->elements[map->size]);
+        return MAP_NULL_ARGUMENT;
+    }
+    if (valueSet(map->elements[map->size], data) == KEY_VALUE_NULL_ARGUMENT) {
+        free(keyGet(map->elements[map->size]));
+        free(map->elements[map->size]);
+        return MAP_NULL_ARGUMENT;
+    }
+    map->size++;
+    return MAP_SUCCESS;
 }
 
 char* mapGet(Map map, const char* key){
@@ -159,22 +161,21 @@ char* mapGet(Map map, const char* key){
     if(index==ELEMENT_NOT_FOUND){
         return NULL;
     }
-    keyValue element=map->elements[index];
-    return element->value;
+    KeyValue element=map->elements[index];
+    return valueGet(element);
 }    
 
 MapResult mapRemove(Map map, const char* key){
     if(map == NULL || key == NULL){
         return MAP_NULL_ARGUMENT;
     }
-    int index=mapFind(map,key);
+    int index = mapFind(map,key);
     if(index==ELEMENT_NOT_FOUND){
         return MAP_ITEM_DOES_NOT_EXIST;
     }
-    free(map->elements[index]->key); //removing the key-value
-    free(map->elements[index]->value); //removing the key-value
-    map->elements[index] = map->elements[map->size - 1]; 
-    map->size--; //set the size to the current size
+    keyValueDestroy(map->elements[index]);
+    map->elements[index] = map->elements[map->size-1];
+    map->size--;
     return MAP_SUCCESS;    
 }
 
@@ -190,9 +191,9 @@ char* mapGetNext(Map map){
     if(map == NULL || map->iterator >= map->size){
         return NULL;
     }
-    keyValue element = map->elements[map->iterator];
+    KeyValue element = map->elements[map->iterator];
     map->iterator++;
-    return element->key;
+    return keyGet(element);
 }
 
 MapResult mapClear(Map map){
@@ -205,6 +206,6 @@ MapResult mapClear(Map map){
             return MAP_ERROR;
         }
     }
-    free(map->elements);
+    //free(map->elements);
     return MAP_SUCCESS;   
 }
