@@ -127,26 +127,28 @@ MapResult mapPut(Map map, const char* key, const char* data) {
         return MAP_NULL_ARGUMENT;
     }
     int index = mapFind(map,key);
-    if (index != ELEMENT_NOT_FOUND) {
+    if (index != ELEMENT_NOT_FOUND) { //if the key exists already:
         KeyValueResult result = valueSet(map->elements[index], data);
         if (result == KEY_VALUE_NULL_ARGUMENT) {
             return MAP_NULL_ARGUMENT;
         }
         return MAP_SUCCESS;
     }
-    if (map->size == map->max_size) {
+    if (map->size == map->max_size) { //if the map is full and needs a reallocation:
         if (expand(map) == MAP_OUT_OF_MEMORY) {
             return MAP_OUT_OF_MEMORY;
         }
     }
-    map->elements[map->size] = keyValueCreate();
+    map->elements[map->size] = keyValueCreate(); //allocates space for the new key-value
+    if (map->elements[map->size] == NULL) {
+        return MAP_OUT_OF_MEMORY;
+    }
     if (keySet(map->elements[map->size], key) == KEY_VALUE_NULL_ARGUMENT) {
-        free(map->elements[map->size]);
+        keyValueDestroy(map->elements[map->size]);
         return MAP_NULL_ARGUMENT;
     }
     if (valueSet(map->elements[map->size], data) == KEY_VALUE_NULL_ARGUMENT) {
-        free(keyGet(map->elements[map->size]));
-        free(map->elements[map->size]);
+        keyValueDestroy(map->elements[map->size]);
         return MAP_NULL_ARGUMENT;
     }
     map->size++;
@@ -206,6 +208,5 @@ MapResult mapClear(Map map){
             return MAP_ERROR;
         }
     }
-    //free(map->elements);
     return MAP_SUCCESS;   
 }
