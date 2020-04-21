@@ -44,3 +44,19 @@ char* valueGet(KeyValue keyValue) {
     }
     return keyValue->value;
 }
+
+KeyValueResult keySet(KeyValue keyValue,const char* key) {
+    if (keyValue == NULL || key == NULL) {
+        return KEY_VALUE_NULL_ARGUMENT;
+    }
+    ALLOCATE(key); //allocates space and copying the string inside
+    return KEY_VALUE_SUCCESS;
+}
+
+KeyValueResult valueSet(KeyValue keyValue, const char* value) {
+    if (keyValue == NULL || value == NULL) {
+        return KEY_VALUE_NULL_ARGUMENT;
+    }
+    ALLOCATE(value); //allocates space and copying the string inside
+    return KEY_VALUE_SUCCESS;
+}
