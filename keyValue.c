@@ -19,7 +19,7 @@ KeyValue keyValueCreate() {
 }
 
 void keyValueDestroy(KeyValue keyValue) {
-    if(keyValue == NULL) {
+    if (keyValue == NULL) {
         return;
     }
     if (keyValue->value != NULL) {

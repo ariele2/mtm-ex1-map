@@ -19,20 +19,8 @@ struct Map_t {
     int iterator;
 };
 
-static char* copyString(const char* str) {
-    char* newStr = malloc(strlen(str) + 1);
-    if (newStr == NULL){
-        return NULL;
-    }
-    return strcpy(newStr, str);
-}
-
 static MapResult addOrDestroy(Map map,KeyValue element) {
-    char* tmp_key = copyString(keyGet(element));
-    char* tmp_value = copyString(valueGet(element));
-    MapResult result = mapPut(map, tmp_key,tmp_value);
-    free(tmp_key);
-    free(tmp_value);
+    MapResult result = mapPut(map, keyGet(element),valueGet(element));
     if (result == MAP_OUT_OF_MEMORY) {
         mapDestroy(map);
     }
@@ -51,12 +39,11 @@ for (int i = 0; i < toAdd->size; ++i) {
 
 static int mapFind(Map map, const char* key) {
     for (int i = 0; i < map->size; i++) {
-        //KeyValue element = map->elements[i];
         if (strcmp(keyGet(map->elements[i]), key) == 0) {
             return i;
         }
     }
- return ELEMENT_NOT_FOUND;
+    return ELEMENT_NOT_FOUND;
 }
 
 static MapResult expand(Map map) {
@@ -88,8 +75,8 @@ Map mapCreate() {
 
 void mapDestroy(Map map){
     if(mapClear(map) != MAP_NULL_ARGUMENT){
-        free(map->elements);
-        free(map);
+        free(map->elements); //deallocates the key-value array
+        free(map); //deallocates the map
     }  
 }
 
@@ -101,7 +88,7 @@ Map mapCopy(Map map) {
     if (newMap == NULL) {
         return NULL;
     }
-    if (addAllOrDestroy(newMap, map)== MAP_OUT_OF_MEMORY) {
+    if (addAllOrDestroy(newMap, map) == MAP_OUT_OF_MEMORY) {
         return NULL;
     }
     newMap->iterator = map->iterator;
@@ -119,7 +106,7 @@ bool mapContains(Map map, const char* key) {
     if (map==NULL || key==NULL) {
         return false;
     }
-    return mapFind(map,key)!=ELEMENT_NOT_FOUND;
+    return mapFind(map,key)!=ELEMENT_NOT_FOUND; //false if mapFind failes, true otherwise
 }
 
 MapResult mapPut(Map map, const char* key, const char* data) {
@@ -128,6 +115,7 @@ MapResult mapPut(Map map, const char* key, const char* data) {
     }
     int index = mapFind(map,key);
     if (index != ELEMENT_NOT_FOUND) { //if the key exists already:
+        free(valueGet(map->elements[index])); //deallocates previous value
         KeyValueResult result = valueSet(map->elements[index], data);
         if (result == KEY_VALUE_NULL_ARGUMENT) {
             return MAP_NULL_ARGUMENT;
@@ -159,11 +147,11 @@ char* mapGet(Map map, const char* key){
     if(map == NULL || key == NULL){
         return NULL;
     }
-    int index=mapFind(map,key);
-    if(index==ELEMENT_NOT_FOUND){
+    int index = mapFind(map,key);
+    if(index == ELEMENT_NOT_FOUND){
         return NULL;
     }
-    KeyValue element=map->elements[index];
+    KeyValue element = map->elements[index];
     return valueGet(element);
 }    
 
@@ -203,7 +191,7 @@ MapResult mapClear(Map map){
         return MAP_NULL_ARGUMENT;
     }
     while(mapGetSize(map) > 0) {
-        MapResult result=mapRemove(map, mapGetFirst(map));
+        MapResult result = mapRemove(map, mapGetFirst(map));
         if(result != MAP_SUCCESS ){
             return MAP_ERROR;
         }
