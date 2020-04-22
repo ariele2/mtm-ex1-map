@@ -91,13 +91,17 @@ KeyValueResult keySet(KeyValue keyValue,const char* key);
  */
 KeyValueResult valueSet(KeyValue keyValue,const char* value);
 
-/* allocates memory for the key/value and checks if succeeded
- * copying the key/value inside the created space if succeeded
+/* 
+ * macro ALLOCATE:
+ * allocates memory for the key/value and checks if succeeded, returns KEY_VALUE_NULL_ARGUMENT
+ * if not. copying the key/value inside the created space.
+ *
  */
 #define ALLOCATE(element) keyValue->element = malloc(strlen(element)+1);\
     if(keyValue->element == NULL){\
         return KEY_VALUE_NULL_ARGUMENT;\
     }\
     strcpy(keyValue->element,element);
+    // ALLOCATE ends here
 
 #endif /* KEY_VALUE_H_ */
