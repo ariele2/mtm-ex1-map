@@ -25,7 +25,7 @@
 /** Type for defining the Map-Id list */
 typedef struct mapIdList_t* MapIdList;
 
-typedef enum MapIdList_t {
+typedef enum MapIdListResult_t {
     MAP_ID_LIST_SUCCESS,
     MAP_ID_LIST_NULL_ARGUMENT,
     MAP_ID_LIST_ID_NOT_VALID,

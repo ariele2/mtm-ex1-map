@@ -1,11 +1,11 @@
 #include "mapIdList.h"
+#include "mapIdStruct.h"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 
 struct mapIdList_t {
-    int id;
-    Map map;
+    MapId mapId;
     struct mapIdList_t* next;
 };
 
@@ -32,8 +32,9 @@ static MapIdList findPreviousNode(MapIdList mapIdList, MapIdList node) {
 
 static MapIdList findNodeById (MapIdList mapIdList, int id) {
     assert(mapIdList != NULL && checkValidId(id)); 
+    mapIdList = mapIdList->next; //no need to check the birtual head node
     while(mapIdList) {
-        if (id == mapIdList->id) {
+        if (id == mapIdGetId(mapIdList->mapId)) {
             return mapIdList;
         }
         mapIdList = mapIdList->next;
@@ -41,10 +42,10 @@ static MapIdList findNodeById (MapIdList mapIdList, int id) {
     return NULL; //id dosent exists if reached here
 }
 
-//destroys a give MapIdList node
+//destroys a given MapIdList node
 static void nodeDestroy(MapIdList node) {
     assert(node !=NULL); //node shouldnt be NULL as the calling function checked it already
-    mapDestroy(node->map);
+    mapIdDestroy(node->mapId);
     free(node);
 }
 
@@ -53,12 +54,11 @@ MapIdList mapIdListCreate() { //creates a first virtual head node with id: -1
     if (mapIdList == NULL) {
         return NULL;
     }
-    mapIdList->map = mapCreate();
-    if (mapIdList->map == NULL) {
-        free (mapIdList);
+    mapIdList->mapId = mapIdCreate();
+    if (mapIdList->mapId == NULL) {
+        free(mapIdList);
         return NULL;
     }
-    mapIdList->id = -1;
     mapIdList->next = NULL;
     return mapIdList;
 }
@@ -68,7 +68,7 @@ void mapIdListDestroy(MapIdList mapIdList) {
         return;
     }
     mapIdListDestroy(mapIdList->next);
-    mapDestroy(mapIdList->map);
+    mapIdDestroy(mapIdList->mapId);
     free(mapIdList);
 }
 
@@ -78,7 +78,7 @@ MapIdListResult mapIdListAdd(MapIdList mapIdList, int id) {
     if (new_mapIdList == NULL) {
         return MAP_ID_LIST_ERROR;
     }
-    new_mapIdList->id = id;
+    mapIdSetId(new_mapIdList->mapId, id);
     MapIdList ptr = mapIdList;
     while(ptr->next) { //looping until reaching the last node in the list
         ptr = ptr->next;
@@ -104,5 +104,5 @@ Map mapIdListGetMap(MapIdList mapIdList, int id) {
         return NULL;
     }
     MapIdList node_to_find = findNodeById(mapIdList, id);
-    return node_to_find->map;
+    return mapIdGetMap(node_to_find->mapId);
 }
