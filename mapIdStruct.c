@@ -25,7 +25,7 @@ void mapIdDestroy(MapId mapId) {
     if (mapId == NULL) {
         return;
     }
-    free(mapId->map);
+    mapDestroy(mapId->map);
     free(mapId);
 }
 

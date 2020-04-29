@@ -4,8 +4,7 @@
 
 #ifndef MTM_ELECTION_H
 #define MTM_ELECTION_H
-
-#include "mtm_map/map.h"
+#include "map.h"
 
 typedef struct election_t* Election;
 
@@ -45,5 +44,20 @@ ElectionResult electionRemoveTribe (Election election, int tribe_id);
 ElectionResult electionRemoveAreas(Election election, AreaConditionFunction should_delete_area);
 
 Map electionComputeAreasToTribesMapping (Election election);
+
+//destroys the election and returns the matching output message 
+#define DESTROY_AND_RETURN_ELECTION(election) \
+        do {\
+        electionDestroy(election);\
+        return ELECTION_OUT_OF_MEMORY;\
+        } while(0)
+
+// frees temprorary resources inside the electionAddVote function        
+#define FREE_TEMP_RESOURCES \
+        do { \
+            free(area_string); \
+            free(tribe_string); \
+            free(num_of_votes_string); \
+        } while(0)
 
 #endif //MTM_ELECTION_H

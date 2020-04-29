@@ -67,7 +67,7 @@ MapIdListResult mapIdListAdd(MapIdList mapIdList, int id);
 * @param mapIdList - The list which the node will be removed from. 
 * @param idElement - The id element which will tell us what node to remove.
 * @return
-*  MAP_ID_LIST_NULL_ARGUMENT if a NULL pointer was sent or if the id is not valid.
+*  MAP_ID_LIST_NULL_ARGUMENT if a NULL pointer was sent,MAP_ID_LIST_ID_NOT_VALIDe if the id is not valid.
 *  MAP_ID_LIST_SUCCESS if the id does not exist, or if the operation succeded.
 */
 MapIdListResult mapIdListRemove(MapIdList mapIdList, int id);
