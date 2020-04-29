@@ -56,7 +56,7 @@ void mapIdListDestroy(MapIdList mapIdList);
 * @param mapIdList - The list which the node will be added to. 
 * @param idElement - The id element which will be set to the node's id.
 * @return
-*  MAP_ID_LIST_NULL_ARGUMENT if a NULL pointer was sent or if the id is not valid.
+*  MAP_ID_LIST_NULL_ARGUMENT if a NULL pointer was sent, MAP_ID_LIST_ERROR if the id is not valid.
 *  MAP_ID_LIST_SUCCESS otherwise.
 */
 MapIdListResult mapIdListAdd(MapIdList mapIdList, int id);

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#define ID_ERROR -1
 
 struct mapIdList_t {
     MapId mapId;
@@ -34,7 +35,11 @@ static MapIdList findNodeById (MapIdList mapIdList, int id) {
     assert(mapIdList != NULL && checkValidId(id)); 
     mapIdList = mapIdList->next; //no need to check the birtual head node
     while(mapIdList) {
-        if (id == mapIdGetId(mapIdList->mapId)) {
+        int node_id = mapIdGetId(mapIdList->mapId);
+        if (node_id == ID_ERROR) {
+            return NULL;
+        }
+        if (id == node_id) {
             return mapIdList;
         }
         mapIdList = mapIdList->next;
@@ -76,9 +81,12 @@ MapIdListResult mapIdListAdd(MapIdList mapIdList, int id) {
     ELEMENTS_VALIDATION(mapIdList, id);
     MapIdList new_mapIdList = mapIdListCreate();
     if (new_mapIdList == NULL) {
+        return MAP_ID_LIST_NULL_ARGUMENT;
+    }
+    MapIdResult result = mapIdSetId(new_mapIdList->mapId, id);
+    if (result != MAP_ID_STRUCT_SUCCESS) {
         return MAP_ID_LIST_ERROR;
     }
-    mapIdSetId(new_mapIdList->mapId, id);
     MapIdList ptr = mapIdList;
     while(ptr->next) { //looping until reaching the last node in the list
         ptr = ptr->next;
@@ -94,9 +102,10 @@ MapIdListResult mapIdListRemove(MapIdList mapIdList, int id) {
         return MAP_ID_LIST_SUCCESS;
     }
     MapIdList prev_node = findPreviousNode(mapIdList, node_to_remove);
+    assert(prev_node != NULL); //it cant be NULL so we put assert here
     prev_node->next = node_to_remove->next;
     nodeDestroy(node_to_remove);
-    return MAP_ID_LIST_SUCCESS; //if it reached here it means the id dosent exists
+    return MAP_ID_LIST_SUCCESS; 
 }
 
 Map mapIdListGetMap(MapIdList mapIdList, int id) {
@@ -104,5 +113,8 @@ Map mapIdListGetMap(MapIdList mapIdList, int id) {
         return NULL;
     }
     MapIdList node_to_find = findNodeById(mapIdList, id);
+    if (node_to_find == NULL) {
+        return MAP_ERROR;
+    }
     return mapIdGetMap(node_to_find->mapId);
 }

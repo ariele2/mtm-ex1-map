@@ -1,5 +1,5 @@
 #include "election.h"
-#include "map.h"
+#include "mapIdList.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "keyValue.h"
@@ -11,7 +11,7 @@
 struct election_t {
     Map tribes;
     Map areas;
-    Map votes;
+    MapIdList votes;
 }; 
 
 
@@ -47,6 +47,20 @@ static char* convertIntToString(int number) {
     return str_number;
 }
 
+//checks the inputs: election - not null, tribe_id - not negative, tribe_name - not null and valid.
+static ElectionResult tribeAddSetValidation (Election election, int tribe_id, const char* tribe_name) {
+    if(election == NULL || tribe_name == NULL) {
+        return ELECTION_NULL_ARGUMENT;
+    }
+    if (tribe_id < 0) {
+        return ELECTION_INVALID_ID;
+    }
+    if(!checkValidationTribeName(tribe_name)){
+        return ELECTION_INVALID_NAME;
+    }
+    return ELECTION_SUCCESS;
+}
+
 Election electionCreate() {
     Election election = malloc(sizeof(*election));
     if (election == NULL) {
@@ -59,14 +73,14 @@ Election electionCreate() {
     }
     election->areas = mapCreate();
     if (election->tribes == NULL) {
-        free(election->tribes);
+        mapDestroy(election->tribes);
         free(election);
         return NULL;
     }
-    election->votes = mapCreate();
+    election->votes = mapIdListCreate();
     if (election->votes == NULL) {
-        free(election->tribes);
-        free(election->areas);
+        mapDestroy(election->tribes);
+        mapDestroy(election->areas);
         free(election);
         return NULL;
     }
@@ -79,19 +93,14 @@ void electionDestroy (Election election) {
     }
     mapDestroy(election->tribes);
     mapDestroy(election->areas);
-    mapDestroy(election->votes); ///could be a map inside the votes!!!!!
+    mapIdListDestroy(election->votes);
     free(election);
 }
 
 ElectionResult electionAddTribe(Election election, int tribe_id, const char* tribe_name) {
-    if(election == NULL || tribe_name == NULL) {
-        return ELECTION_NULL_ARGUMENT;
-    }
-    if (tribe_id < 0) {
-        return ELECTION_INVALID_ID;
-    }
-    if(!checkValidationTribeName(tribe_name)){
-        return ELECTION_INVALID_NAME;
+    ElectionResult validation = tribeAddSetValidation(election, tribe_id, tribe_name);
+    if (validation != ELECTION_SUCCESS) {
+        return validation;
     }
     char *str_id = convertIntToString(tribe_id);
     if(str_id == NULL){
@@ -102,7 +111,7 @@ ElectionResult electionAddTribe(Election election, int tribe_id, const char* tri
         free(str_id);
         return ELECTION_TRIBE_ALREADY_EXIST;
     }
-    //at this stage we know that the key dosent exist.
+    //at this stage we know that the key (tribe id) doesnt exist.
     MapResult result = mapPut(election->tribes, str_id, tribe_name);
     if (result == MAP_OUT_OF_MEMORY) {
         free(str_id);
@@ -132,12 +141,16 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
         free(str_id);
         return ELECTION_TRIBE_ALREADY_EXIST;
     }
-    //at this stage we know that the key dosent exist.
-    MapResult result = mapPut(election->areas, str_id, area_name);
-    if (result == MAP_OUT_OF_MEMORY) {
+    //at this stage we know that the key (area id) doesnt exist.
+    MapResult area_map_result = mapPut(election->areas, str_id, area_name);
+    if (area_map_result == MAP_OUT_OF_MEMORY) {
         free(str_id);
         electionDestroy(election);
         return ELECTION_OUT_OF_MEMORY;
+    }
+    MapIdListResult area_votes_result = mapIdListAdd(election->votes, area_id);
+    if (area_votes_result != MAP_ID_LIST_SUCCESS) { //shouldnt eneter here as we checked the inputs already
+        return ELECTION_NULL_ARGUMENT;
     }
     return ELECTION_SUCCESS;
 }
@@ -157,37 +170,27 @@ char* electionGetTribeName (Election election, int tribe_id){
 }
 
 ElectionResult electionSetTribeName (Election election, int tribe_id, const char* tribe_name){
-    if(election == NULL || tribe_name == NULL) {
-        return ELECTION_NULL_ARGUMENT;
-    }
-    if (tribe_id < 0) {
-        return ELECTION_INVALID_ID;
-    }
-    if(!checkValidationTribeName(tribe_name)){
-        return ELECTION_INVALID_NAME;
+    ElectionResult validation = tribeAddSetValidation(election, tribe_id, tribe_name);
+    if (validation != ELECTION_SUCCESS) {
+        return validation;
     }
     char *str_id = convertIntToString(tribe_id);
     if(str_id == NULL){
         electionDestroy(election);
         return ELECTION_OUT_OF_MEMORY;
     }
-
     if(!mapContains(election->tribes,str_id)){
         return ELECTION_TRIBE_NOT_EXIST;
     }
-
     MapResult result = mapPut(election->tribes,str_id,tribe_name);
     free(str_id);
-
     if(result == MAP_NULL_ARGUMENT){
         return ELECTION_NULL_ARGUMENT;
     }
-
     if(result == MAP_OUT_OF_MEMORY){
         electionDestroy(election);
         return ELECTION_OUT_OF_MEMORY;
     }
-
     return ELECTION_SUCCESS;
 }
 
@@ -203,17 +206,13 @@ ElectionResult electionRemoveTribe (Election election, int tribe_id){
         electionDestroy(election);
         return ELECTION_OUT_OF_MEMORY;
     }
-    MapResult result=mapRemove(election->tribes,str_id);
+    MapResult result = mapRemove(election->tribes,str_id);
     free(str_id);
-
     if(result == MAP_NULL_ARGUMENT){
         return ELECTION_NULL_ARGUMENT;
     }
-
     if(result == MAP_ITEM_DOES_NOT_EXIST){
         ELECTION_TRIBE_NOT_EXIST;
     }
-
     return ELECTION_SUCCESS;
-
 }
