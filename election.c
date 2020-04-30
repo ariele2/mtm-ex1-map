@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "keyValue.h"
+#include <assert.h>
 #define LOWER_CASE_A 'a'
 #define LOWER_CASE_Z 'z'
 #define SPACE ' '
@@ -14,10 +15,10 @@ struct election_t {
     MapIdList votes;
 }; 
 
-
+// returns true if the tribe name is valid
 static bool checkValidationTribeName(const char* tribe_name) {
-    char* tmp_ptr = tribe_name; //saving the position of the first letter
-    while (tribe_name) {
+    const char* tmp_ptr = tribe_name; //saving the position of the first letter
+    while (*tribe_name) {
         if((*tribe_name > LOWER_CASE_Z || *tribe_name < LOWER_CASE_A)
         && *tribe_name != SPACE ) {
             return false;
@@ -52,7 +53,7 @@ static char* convertIntToString(int number) {
 // converts string format (char*) to integer and returns the integer
 static int convertStringToInt(const char* string) {
     int string_to_int = 0;
-    sscanf(string, "%d", string_to_int);
+    sscanf(string, "%d", &string_to_int);
     return string_to_int;
 }
 
@@ -73,10 +74,10 @@ static ElectionResult tribeAddSetValidation (Election election, int tribe_id, co
 //checks the inputs: election - not null, tribe_id, area_id and num_of_votes - not negative
 static ElectionResult addRemoveVoteValidation(Election election, int area_id, int tribe_id, int num_of_votes){
     if(election == NULL){
-        ELECTION_NULL_ARGUMENT;
+        return ELECTION_NULL_ARGUMENT;
     }
     if(area_id < 0 || tribe_id < 0){
-        ELECTION_INVALID_ID;
+        return ELECTION_INVALID_ID;
     }
     if(num_of_votes <= 0) {
         return ELECTION_INVALID_VOTES;
@@ -214,7 +215,7 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
     if(result != ELECTION_SUCCESS) {
         return result;
     }
-    const char *area_string = convertIntToString(area_id);
+    char *area_string = convertIntToString(area_id);
     if(area_string == NULL){
         DESTROY_AND_RETURN_ELECTION(election);
     }
@@ -222,7 +223,7 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
         free(area_string);
         return ELECTION_AREA_NOT_EXIST;
     }
-    const char *tribe_string = convertIntToString(tribe_id);
+    char *tribe_string = convertIntToString(tribe_id);
     if(tribe_string == NULL){
         free(area_string);
         DESTROY_AND_RETURN_ELECTION(election);
@@ -232,7 +233,7 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
         free(tribe_string);
         return ELECTION_TRIBE_NOT_EXIST;
     }
-    const char *num_of_votes_string = convertIntToString(num_of_votes);
+    char *num_of_votes_string = convertIntToString(num_of_votes);
     if(num_of_votes_string == NULL){
         free(area_string);
         free(tribe_string);
@@ -268,7 +269,7 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
     if(result != ELECTION_SUCCESS) {
         return result;
     }
-    const char *area_string = convertIntToString(area_id);
+    char *area_string = convertIntToString(area_id);
     if(area_string == NULL){
         DESTROY_AND_RETURN_ELECTION(election);
     }
@@ -276,7 +277,7 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
         free(area_string);
         return ELECTION_AREA_NOT_EXIST;
     }
-    const char *tribe_string = convertIntToString(tribe_id);
+    char *tribe_string = convertIntToString(tribe_id);
     if(tribe_string == NULL){
         free(area_string);
         DESTROY_AND_RETURN_ELECTION(election);
@@ -286,7 +287,7 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
         free(tribe_string);
         return ELECTION_TRIBE_NOT_EXIST;
     }
-    const char *num_of_votes_string = convertIntToString(num_of_votes);
+    char *num_of_votes_string = convertIntToString(num_of_votes);
     if(num_of_votes_string == NULL){
         free(area_string);
         free(tribe_string);
@@ -324,7 +325,7 @@ char* electionGetTribeName (Election election, int tribe_id){
     if(election == NULL){
         return NULL;
     }
-    const char *str_id = convertIntToString(tribe_id);  //const for the mapGet function
+    char *str_id = convertIntToString(tribe_id);
     if(str_id == NULL){
         return NULL;
     }
@@ -374,7 +375,7 @@ ElectionResult electionRemoveTribe (Election election, int tribe_id){
         return ELECTION_NULL_ARGUMENT;
     }
     if(result == MAP_ITEM_DOES_NOT_EXIST){
-        ELECTION_TRIBE_NOT_EXIST;
+        return ELECTION_TRIBE_NOT_EXIST;
     }
     return ELECTION_SUCCESS;
 }

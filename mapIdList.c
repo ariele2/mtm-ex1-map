@@ -114,7 +114,7 @@ Map mapIdListGetMap(MapIdList mapIdList, int id) {
     }
     MapIdList node_to_find = findNodeById(mapIdList, id);
     if (node_to_find == NULL) {
-        return MAP_ERROR;
+        return NULL;
     }
     return mapIdGetMap(node_to_find->mapId);
 }
