@@ -28,6 +28,7 @@ static bool checkValidationTribeName(const char* tribe_name) {
     return true;
 }
 
+//counts the digit of the entered number
 static int countDigits(int number) {
     int counter = 0;
     while(number > 0) {
@@ -37,6 +38,7 @@ static int countDigits(int number) {
     return counter;
 }
 
+// converts integer to string format (char*) and returns the string
 static char* convertIntToString(int number) {
     assert(number>=0);
     char* str_number= malloc(countDigits(number)+1);
@@ -45,6 +47,13 @@ static char* convertIntToString(int number) {
     }
     sprintf(str_number,"%d",number);
     return str_number;
+}
+
+// converts string format (char*) to integer and returns the integer
+static int convertStringToInt(const char* string) {
+    int string_to_int = 0;
+    sscanf(string, "%d", string_to_int);
+    return string_to_int;
 }
 
 //checks the inputs: election - not null, tribe_id - not negative, tribe_name - not null and valid.
@@ -194,7 +203,7 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
         free(tribe_string);
         DESTROY_AND_RETURN_ELECTION(election);
     }
-    Map map_area_id = mapIdListGetMap(election->votes,area_id);
+    Map map_area_id = mapIdListGetMap(election->votes,area_id); 
     if(map_area_id == NULL) {
         return ELECTION_NULL_ARGUMENT;
     }
@@ -205,7 +214,7 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
         }
         return ELECTION_SUCCESS;       
     }
-    int current_num_of_votes = atoi(mapGet(map_area_id, tribe_string));
+    int current_num_of_votes = convertStringToInt(mapGet(map_area_id, tribe_string));
     char* num_of_votes_update_string = convertIntToString(current_num_of_votes + num_of_votes);
     if (num_of_votes_update_string == NULL) {
         FREE_TEMP_RESOURCES;
@@ -283,7 +292,7 @@ ElectionResult electionRemoveAreas(Election election, AreaConditionFunction shou
         return ELECTION_NULL_ARGUMENT;
     }
     MAP_FOREACH(iter, election->areas) {
-        int area_id = atoi(iter);
+        int area_id = convertStringToInt(iter); 
         if (should_delete_area(area_id)) {
             assert(area_id>=0);
             if(mapIdListRemove(election->votes, area_id) != MAP_ID_LIST_SUCCESS) { //no need to check the id
