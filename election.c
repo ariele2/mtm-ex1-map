@@ -88,14 +88,14 @@ static ElectionResult addRemoveVoteValidation(Election election, int area_id, in
 // aux function for the mapping areas to tribes - updates the areas_to_tribes_mapping with the fitting values
 static bool electionComputeAreasToTribesMappingAux (Election election, Map areas_to_tribes_mapping){
     assert(election != NULL && areas_to_tribes_mapping != NULL);
-    MAP_FOREACH(area_iter, election->areas) {
+    MAP_FOREACH(area_iter, election->areas) { //looping through the areas
         bool no_tribe_exists = true;
         int area_iter_int = convertStringToInt(area_iter);
         Map area_votes_map = mapIdListGetMap(election->votes, area_iter_int);
         assert (area_votes_map != NULL);
         int max_votes = 0;
         char* max_vote_tribe;
-        MAP_FOREACH(vote_tribe_iter, area_votes_map) {
+        MAP_FOREACH(vote_tribe_iter, area_votes_map) { //looping through the vote's map
             no_tribe_exists = false;
             int current_tribe_votes = convertStringToInt(mapGet(area_votes_map, vote_tribe_iter));
             if (current_tribe_votes > max_votes) {
@@ -298,10 +298,8 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
         return ELECTION_NULL_ARGUMENT;
     }
     if (!mapContains(map_area_id, tribe_string)){ 
-        if(mapPut(map_area_id, tribe_string, num_of_votes_string) != MAP_SUCCESS){
-            FREE_TEMP_RESOURCES;
-            DESTROY_AND_RETURN_ELECTION(election);
-        }
+        free(area_string);
+        free(tribe_string);
         return ELECTION_SUCCESS;       
     }
     int current_num_of_votes = convertStringToInt(mapGet(map_area_id, tribe_string));
@@ -419,7 +417,7 @@ Map electionComputeAreasToTribesMapping (Election election) {
     if (areas_to_tribes_mapping == NULL) {
         return NULL;
     }
-    if(!electionComputeAreasToTribesMappingAux(election,areas_to_tribes_mapping)) {
+    if(!electionComputeAreasToTribesMappingAux(election,areas_to_tribes_mapping)) { //no tribes in the map
         return NULL;
     }
     return areas_to_tribes_mapping;
