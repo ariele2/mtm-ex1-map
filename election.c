@@ -195,7 +195,7 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
     }
     if(mapContains(election->areas,str_id)){
         free(str_id);
-        return ELECTION_TRIBE_ALREADY_EXIST;
+        return ELECTION_AREA_ALREADY_EXIST;
     }
     //at this stage we know that the key (area id) doesnt exist.
     MapResult area_map_result = mapPut(election->areas, str_id, area_name);
@@ -384,18 +384,30 @@ ElectionResult electionRemoveAreas(Election election, AreaConditionFunction shou
     if (election == NULL || should_delete_area == NULL) {
         return ELECTION_NULL_ARGUMENT;
     }
+    if (election->areas == NULL) {
+        return ELECTION_NULL_ARGUMENT;
+    }
+    int num_of_areas = mapGetSize(election->areas); 
+    char** areas_to_remove = malloc(sizeof(char*)*num_of_areas);
+    int areas_to_remove_counter = 0;
     MAP_FOREACH(iter, election->areas) {
         int area_id = convertStringToInt(iter); 
-        if (should_delete_area(area_id)) {
+        if (should_delete_area(area_id)) { //checking which areas need to be removed
             assert(area_id>=0);
-            if(mapIdListRemove(election->votes, area_id) != MAP_ID_LIST_SUCCESS) { //no need to check the id
-                return ELECTION_NULL_ARGUMENT;
-            }
-            if(mapRemove(election->areas, iter) != MAP_SUCCESS){ //no need to check if the key exists
-                return MAP_NULL_ARGUMENT;
-            }
+            areas_to_remove[areas_to_remove_counter] = iter; //insert them to the array
+            areas_to_remove_counter++;
         }
     }
+    for (int i=0; i<areas_to_remove_counter; i++) {//looping through the array and removing
+        int area_id_to_remove = convertStringToInt(areas_to_remove[i]);
+        if(mapIdListRemove(election->votes, area_id_to_remove) != MAP_ID_LIST_SUCCESS) { //no need to check the id
+            return ELECTION_NULL_ARGUMENT;
+        }
+        if(mapRemove(election->areas, areas_to_remove[i]) != MAP_SUCCESS){ //no need to check if the key exists
+            return ELECTION_NULL_ARGUMENT;
+        }
+    }
+    free(areas_to_remove);
     return ELECTION_SUCCESS;
 }
 
