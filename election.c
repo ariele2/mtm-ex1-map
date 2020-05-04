@@ -156,8 +156,10 @@ static bool electionComputeAreasToTribesMappingAux (Election election, Map areas
             }
             MapResult result = mapPut(areas_to_tribes_mapping, area_iter, lowest_tribe_id_str);
             if (result != MAP_SUCCESS) {
+                free(lowest_tribe_id_str);
                 return false;
             }
+            free(lowest_tribe_id_str);
         }
     }
     return true;
@@ -294,6 +296,7 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
             FREE_TEMP_RESOURCES;
             DESTROY_AND_RETURN_ELECTION(election);
         }
+        FREE_TEMP_RESOURCES;
         return ELECTION_SUCCESS;
     }
     int current_num_of_votes = convertStringToInt(mapGet(map_area_id, tribe_string));
@@ -393,6 +396,7 @@ ElectionResult electionSetTribeName (Election election, int tribe_id, const char
         DESTROY_AND_RETURN_ELECTION(election);
     }
     if(!mapContains(election->tribes,str_id)){
+        free(str_id);
         return ELECTION_TRIBE_NOT_EXIST;
     }
     MapResult result = mapPut(election->tribes,str_id,tribe_name);
