@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "keyValue.h"
 #include <assert.h>
+#include <string.h>
 #define LOWER_CASE_A 'a'
 #define LOWER_CASE_Z 'z'
 #define SPACE ' '
@@ -57,7 +58,7 @@ static int countDigits(int number) {
 // converts integer to string format (char*) and returns the string
 static char* convertIntToString(int number) {
     assert(number>=0);
-    char* str_number= malloc(countDigits(number)+1);
+    char* str_number = malloc(countDigits(number)+1);
     if(str_number == NULL){
         return NULL;
     }
@@ -153,8 +154,10 @@ static bool electionComputeAreasToTribesMappingAux (Election election, Map areas
             }
             MapResult result = mapPut(areas_to_tribes_mapping, area_iter, lowest_tribe_id_str);
             if (result != MAP_SUCCESS) {
+                free(lowest_tribe_id_str);
                 return false;
             }
+            free(lowest_tribe_id_str);
         }
     }
     return true;
@@ -282,6 +285,7 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
     }
     Map map_area_id = mapIdListGetMap(election->votes,area_id); 
     if(map_area_id == NULL) {
+        FREE_TEMP_RESOURCES;
         return ELECTION_NULL_ARGUMENT;
     }
     if (!mapContains(map_area_id, tribe_string)){ 
@@ -336,6 +340,7 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
     }
     Map map_area_id = mapIdListGetMap(election->votes,area_id); 
     if(map_area_id == NULL) {
+        FREE_TEMP_RESOURCES;
         return ELECTION_NULL_ARGUMENT;
     }
     if (!mapContains(map_area_id, tribe_string)){ 
@@ -384,6 +389,7 @@ ElectionResult electionSetTribeName (Election election, int tribe_id, const char
         DESTROY_AND_RETURN_ELECTION(election);
     }
     if(!mapContains(election->tribes,str_id)){
+        free(str_id);
         return ELECTION_TRIBE_NOT_EXIST;
     }
     MapResult result = mapPut(election->tribes,str_id,tribe_name);
