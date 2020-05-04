@@ -6,10 +6,10 @@
 
 /*The number of tests*/
 #define NUMBER_TESTS 5
-#define MAX_STR_LEN 20 //Must be greater than 1
-#define MAX_VOTES 100 //Must be greater than 1
-#define NUM_OF_AREAS 30 //Do not lower beneath 12
-#define NUM_OF_TRIBES 50 //Do not lower beneath 12
+#define MAX_STR_LEN 200 //Must be greater than 1
+#define MAX_VOTES 1000 //Must be greater than 1
+#define NUM_OF_AREAS 300 //Do not lower beneath 12
+#define NUM_OF_TRIBES 500 //Do not lower beneath 12
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -18,8 +18,8 @@
 #define SECOND_TRIBE 4
 #define THIRD_TRIBE 5
 #define FIRST_AREA 1
-#define SECOND_AREA 2 
-#define THIRD_AREA 3   
+#define SECOND_AREA 2
+#define THIRD_AREA 3
 #define FOURTH_AREA 404
 
 static char *rand_string(char *str, size_t size)
@@ -65,7 +65,7 @@ bool deleteAllAreas(int area_id)
 bool testElectionRemoveAreas() {
     Election election = electionCreate();
     ASSERT_TEST(electionAddArea(election, FIRST_AREA, "first area") == ELECTION_SUCCESS);
-    ASSERT_TEST(electionAddArea(election, SECOND_AREA, "second area") == ELECTION_SUCCESS); 
+    ASSERT_TEST(electionAddArea(election, SECOND_AREA, "second area") == ELECTION_SUCCESS);
     ASSERT_TEST(electionRemoveAreas(election, deleteOnlyFirstArea) == ELECTION_SUCCESS);
     ASSERT_TEST(electionAddArea(election, SECOND_AREA, "second area") == ELECTION_AREA_ALREADY_EXIST);
     ASSERT_TEST(electionAddArea(election, 3, "THIRD ") == ELECTION_INVALID_NAME);
@@ -148,7 +148,7 @@ bool testComputeAreasToTribesMapping()
     ASSERT_TEST((tester = electionComputeAreasToTribesMapping(election)) != NULL);
     ASSERT_TEST(!strcmp(mapGet(tester, TOSTRING(FIRST_AREA)), TOSTRING(FIRST_TRIBE)));
     ASSERT_TEST(!strcmp(mapGet(tester, TOSTRING(SECOND_AREA)), TOSTRING(THIRD_TRIBE)));
-    //ASSERT_TEST(!strcmp(mapGet(tester, TOSTRING(THIRD_AREA)), TOSTRING(FIRST_TRIBE)));
+    ASSERT_TEST(!strcmp(mapGet(tester, TOSTRING(THIRD_AREA)), TOSTRING(FIRST_TRIBE)));
     ASSERT_TEST(!strcmp(mapGet(tester, TOSTRING(FOURTH_AREA)), TOSTRING(SECOND_TRIBE)));
     mapDestroy(tester);
 
@@ -204,20 +204,20 @@ bool raiseHell()
 
 /*The functions for the tests should be added here*/
 bool (*tests[]) (void) = {
-                        testElectionRemoveAreas,
-                        testElectionRemoveAddtribe,
-                        testAddRemoveVotes,
-                        testComputeAreasToTribesMapping,
-                        raiseHell
+        testElectionRemoveAreas,
+        testElectionRemoveAddtribe,
+        testAddRemoveVotes,
+        testComputeAreasToTribesMapping,
+        raiseHell
 };
 
 /*The names of the test functions should be added here*/
 const char* testNames[] = {
-                            "testElectionRemoveAreas",
-                            "testElectionRemoveAddtribe",
-                            "testAddRemoveVotes",
-                            "testComputeAreasToTribesMapping",
-                            "raiseHell"
+        "testElectionRemoveAreas",
+        "testElectionRemoveAddtribe",
+        "testAddRemoveVotes",
+        "testComputeAreasToTribesMapping",
+        "raiseHell"
 };
 
 int main(int argc, char* argv[]) {

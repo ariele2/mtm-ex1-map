@@ -8,6 +8,21 @@
 #define LOWER_CASE_Z 'z'
 #define SPACE ' '
 #define ELEMENT_NOT_FOUND -1
+//destroys the election and returns the matching output message 
+#define DESTROY_AND_RETURN_ELECTION(election) \
+        do {\
+        electionDestroy(election);\
+        return ELECTION_OUT_OF_MEMORY;\
+        } while(0)
+
+//frees temporary resources inside the electionAddVote function
+#define FREE_TEMP_RESOURCES \
+        do { \
+            free(area_string); \
+            free(tribe_string); \
+            free(num_of_votes_string); \
+        } while(0)
+
 
 struct election_t {
     Map tribes;
@@ -85,6 +100,19 @@ static ElectionResult addRemoveVoteValidation(Election election, int area_id, in
     return ELECTION_SUCCESS;
 }
 
+// returns the lowest tribe id inside an election
+static int calculateLowestTribeId(Election election) {
+    assert(election != NULL && mapGetFirst(election->tribes) != NULL); // no need to check election or the tribes again.
+    int lowest_tribe_id = convertStringToInt(mapGetFirst(election->tribes));
+    MAP_FOREACH(tribes_iter, election->tribes) {
+        int id_to_check = convertStringToInt(tribes_iter);
+        if (id_to_check < lowest_tribe_id) {
+            lowest_tribe_id = id_to_check;
+        }
+    }
+    return lowest_tribe_id;
+}
+
 // aux function for the mapping areas to tribes - updates the areas_to_tribes_mapping with the fitting values
 static bool electionComputeAreasToTribesMappingAux (Election election, Map areas_to_tribes_mapping){
     assert(election != NULL && areas_to_tribes_mapping != NULL);
@@ -94,9 +122,10 @@ static bool electionComputeAreasToTribesMappingAux (Election election, Map areas
         Map area_votes_map = mapIdListGetMap(election->votes, area_iter_int);
         assert (area_votes_map != NULL);
         int max_votes = 0;
-        char* max_vote_tribe;
+        char* max_vote_tribe="";
         MAP_FOREACH(vote_tribe_iter, area_votes_map) { //looping through the vote's map
             no_tribe_exists = false;
+            assert(mapGet(area_votes_map, vote_tribe_iter) != NULL); // we know there shouldnt be NULL inside
             int current_tribe_votes = convertStringToInt(mapGet(area_votes_map, vote_tribe_iter));
             if (current_tribe_votes > max_votes) {
                 max_votes = current_tribe_votes;
@@ -110,8 +139,19 @@ static bool electionComputeAreasToTribesMappingAux (Election election, Map areas
                 }            
             }
         }
-        if (!no_tribe_exists) {
+        if (!no_tribe_exists) { //inserting the most voted tribe in the area to the map
             MapResult result = mapPut(areas_to_tribes_mapping, area_iter, max_vote_tribe);
+            if (result != MAP_SUCCESS) {
+                return false;
+            }
+        }
+        else {
+            char* lowest_tribe_id_str = convertIntToString(calculateLowestTribeId(election));
+            if (lowest_tribe_id_str == NULL) { //program ran out of memory
+                electionDestroy(election);
+                return false;
+            }
+            MapResult result = mapPut(areas_to_tribes_mapping, area_iter, lowest_tribe_id_str);
             if (result != MAP_SUCCESS) {
                 return false;
             }
@@ -175,6 +215,7 @@ ElectionResult electionAddTribe(Election election, int tribe_id, const char* tri
         free(str_id);
         DESTROY_AND_RETURN_ELECTION(election);
     }
+    free(str_id);
     return ELECTION_SUCCESS;
 }
 
@@ -190,7 +231,6 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
     }
     char *str_id = convertIntToString(area_id);
     if(str_id == NULL){
-        free(str_id);
         DESTROY_AND_RETURN_ELECTION(election);
     }
     if(mapContains(election->areas,str_id)){
@@ -207,6 +247,7 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
     if (area_votes_result != MAP_ID_LIST_SUCCESS) { //shouldnt enter here as we checked the inputs already
         return ELECTION_NULL_ARGUMENT;
     }
+    free(str_id);
     return ELECTION_SUCCESS;
 }
 
