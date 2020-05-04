@@ -28,14 +28,14 @@ struct election_t {
     Map tribes;
     Map areas;
     MapIdList votes;
-}; 
+};
 
 // returns true if the tribe name is valid
 static bool checkValidationTribeName(const char* tribe_name) {
     const char* tmp_ptr = tribe_name; //saving the position of the first letter
     while (*tribe_name) {
         if((*tribe_name > LOWER_CASE_Z || *tribe_name < LOWER_CASE_A)
-        && *tribe_name != SPACE ) {
+           && *tribe_name != SPACE ) {
             return false;
         }
         tribe_name++;
@@ -46,6 +46,9 @@ static bool checkValidationTribeName(const char* tribe_name) {
 
 //counts the digit of the entered number
 static int countDigits(int number) {
+    if (number == 0) {
+        return 1;
+    }
     int counter = 0;
     while(number > 0) {
         counter++;
@@ -136,7 +139,7 @@ static bool electionComputeAreasToTribesMappingAux (Election election, Map areas
                 int max_vote_tribe_int = convertStringToInt(max_vote_tribe);
                 if(vote_tribe_iter_int < max_vote_tribe_int){
                     max_vote_tribe = vote_tribe_iter;
-                }            
+                }
             }
         }
         if (!no_tribe_exists) { //inserting the most voted tribe in the area to the map
@@ -215,6 +218,7 @@ ElectionResult electionAddTribe(Election election, int tribe_id, const char* tri
         free(str_id);
         DESTROY_AND_RETURN_ELECTION(election);
     }
+    free(str_id);
     return ELECTION_SUCCESS;
 }
 
@@ -244,8 +248,10 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
     }
     MapIdListResult area_votes_result = mapIdListAdd(election->votes, area_id);
     if (area_votes_result != MAP_ID_LIST_SUCCESS) { //shouldnt enter here as we checked the inputs already
+        free(str_id);
         return ELECTION_NULL_ARGUMENT;
     }
+    free(str_id);
     return ELECTION_SUCCESS;
 }
 
@@ -254,43 +260,44 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
     if(result != ELECTION_SUCCESS) {
         return result;
     }
-    char *area_string = convertIntToString(area_id);
+    char *area_string = convertIntToString(area_id); //1st allocation
     if(area_string == NULL){
         DESTROY_AND_RETURN_ELECTION(election);
     }
-    if(!mapContains(election->areas,area_string)){
+    if(!mapContains(election->areas,area_string)){ 
         free(area_string);
         return ELECTION_AREA_NOT_EXIST;
     }
-    char *tribe_string = convertIntToString(tribe_id);
+    char *tribe_string = convertIntToString(tribe_id); //2nd allocation
     if(tribe_string == NULL){
         free(area_string);
         DESTROY_AND_RETURN_ELECTION(election);
     }
-    if(!mapContains(election->tribes,tribe_string)) {
+    if(!mapContains(election->tribes,tribe_string)) { 
         free(area_string);
         free(tribe_string);
         return ELECTION_TRIBE_NOT_EXIST;
     }
-    char *num_of_votes_string = convertIntToString(num_of_votes);
+    char *num_of_votes_string = convertIntToString(num_of_votes); //3rd alloaction
     if(num_of_votes_string == NULL){
         free(area_string);
         free(tribe_string);
         DESTROY_AND_RETURN_ELECTION(election);
     }
-    Map map_area_id = mapIdListGetMap(election->votes,area_id); 
+    Map map_area_id = mapIdListGetMap(election->votes,area_id);
     if(map_area_id == NULL) {
+        FREE_TEMP_RESOURCES;
         return ELECTION_NULL_ARGUMENT;
     }
-    if (!mapContains(map_area_id, tribe_string)){ 
+    if (!mapContains(map_area_id, tribe_string)){
         if(mapPut(map_area_id, tribe_string, num_of_votes_string) != MAP_SUCCESS){
             FREE_TEMP_RESOURCES;
             DESTROY_AND_RETURN_ELECTION(election);
         }
-        return ELECTION_SUCCESS;       
+        return ELECTION_SUCCESS;
     }
     int current_num_of_votes = convertStringToInt(mapGet(map_area_id, tribe_string));
-    char* num_of_votes_update_string = convertIntToString(current_num_of_votes + num_of_votes);
+    char* num_of_votes_update_string = convertIntToString(current_num_of_votes + num_of_votes); //4th allocation
     if (num_of_votes_update_string == NULL) {
         FREE_TEMP_RESOURCES;
         DESTROY_AND_RETURN_ELECTION(election);
@@ -300,6 +307,8 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
         free(num_of_votes_update_string);
         DESTROY_AND_RETURN_ELECTION(election);
     }
+    FREE_TEMP_RESOURCES;
+    free(num_of_votes_update_string);
     return ELECTION_SUCCESS;
 }
 
@@ -332,14 +341,14 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
         free(tribe_string);
         DESTROY_AND_RETURN_ELECTION(election);
     }
-    Map map_area_id = mapIdListGetMap(election->votes,area_id); 
+    Map map_area_id = mapIdListGetMap(election->votes,area_id);
     if(map_area_id == NULL) {
+        FREE_TEMP_RESOURCES;
         return ELECTION_NULL_ARGUMENT;
     }
-    if (!mapContains(map_area_id, tribe_string)){ 
-        free(area_string);
-        free(tribe_string);
-        return ELECTION_SUCCESS;       
+    if (!mapContains(map_area_id, tribe_string)){
+        FREE_TEMP_RESOURCES;
+        return ELECTION_SUCCESS;
     }
     int current_num_of_votes = convertStringToInt(mapGet(map_area_id, tribe_string));
     if (current_num_of_votes < num_of_votes) { //if the user wants to remove more votes then the current votes, enters 0.
@@ -355,6 +364,8 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
         free(num_of_votes_update_string);
         DESTROY_AND_RETURN_ELECTION(election);
     }
+    FREE_TEMP_RESOURCES;
+    free(num_of_votes_update_string);
     return ELECTION_SUCCESS;
 }
 
@@ -368,7 +379,7 @@ char* electionGetTribeName (Election election, int tribe_id){
     }
     char *str_name = mapGet(election->tribes,str_id);
     free(str_id);
-    char *returned_name = malloc(strlen(str_name)+1); //assuming the user frees it later 
+    char *returned_name = malloc(strlen(str_name)+1); //assuming the user frees it later
     return strcpy(returned_name,str_name);
 }
 
@@ -424,11 +435,11 @@ ElectionResult electionRemoveAreas(Election election, AreaConditionFunction shou
     if (election->areas == NULL) {
         return ELECTION_NULL_ARGUMENT;
     }
-    int num_of_areas = mapGetSize(election->areas); 
+    int num_of_areas = mapGetSize(election->areas);
     char** areas_to_remove = malloc(sizeof(char*)*num_of_areas);
     int areas_to_remove_counter = 0;
     MAP_FOREACH(iter, election->areas) {
-        int area_id = convertStringToInt(iter); 
+        int area_id = convertStringToInt(iter);
         if (should_delete_area(area_id)) { //checking which areas need to be removed
             assert(area_id>=0);
             areas_to_remove[areas_to_remove_counter] = iter; //insert them to the array
