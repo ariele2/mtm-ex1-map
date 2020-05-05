@@ -18,7 +18,8 @@ typedef enum ElectionResult_t {
     ELECTION_AREA_ALREADY_EXIST,
     ELECTION_TRIBE_NOT_EXIST,
     ELECTION_AREA_NOT_EXIST,
-    ELECTION_INVALID_VOTES
+    ELECTION_INVALID_VOTES,
+    ELECTION_ERROR
 } ElectionResult;
 
 typedef bool (*AreaConditionFunction) (int);
