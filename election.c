@@ -38,6 +38,26 @@
                 return to_return; \
             } \
         } while(0)
+
+//validate the resources of function election add/remove vote.
+#define VOTE_RESOURCES_VALIDATATION \
+        do { \
+            ElectionResult validation_result = addRemoveVoteValidation(election, area_id, tribe_id, num_of_votes); \
+            if(validation_result != ELECTION_SUCCESS) { \
+                return validation_result; \
+            } \
+        } while(0)
+
+//validate that the allocations while casting from int to str works properly, also checks if tribe&area exists
+//should insert true inside boolean while using the macro inside add, false inside remove. 
+#define VOTE_STR_ALLOCATION_AND_CHECK(boolean) \
+        do { \
+            ElectionResult result = allocateStrVariables(election, area_id, tribe_id, \
+                            num_of_votes, string_variables, boolean); \
+            if (result != ELECTION_SUCCESS) { \
+                return result; \
+            } \
+        } while(0)
         
 struct election_t {
     Map tribes;
@@ -102,7 +122,7 @@ static int convertStringToInt(const char* string) {
     return string_to_int;
 }
 
-//checks the inputs: election - not null, id - not negative, name - not null and valid. (id & name of the tribe or area).
+//checks the inputs: election - not null, id - not negative, name - not null and valid. (id&name of the tribe or area).
 static ElectionResult addOrSetValidation (Election election, int id, const char* name) {
     if(election == NULL || name == NULL) {
         return ELECTION_NULL_ARGUMENT;
@@ -318,15 +338,9 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
 }
 
 ElectionResult electionAddVote (Election election, int area_id, int tribe_id, int num_of_votes) {
-    ElectionResult validation_result = addRemoveVoteValidation(election, area_id, tribe_id, num_of_votes);
-    if(validation_result != ELECTION_SUCCESS) {
-        return validation_result;
-    }
+    VOTE_RESOURCES_VALIDATATION;
     char* string_variables[ADD_REMOVE_VOTE_VARIABLES]; //contains the string variables we need to use
-    ElectionResult result = allocateStrVariables(election, area_id, tribe_id, num_of_votes, string_variables,true);
-    if (result != ELECTION_SUCCESS) {
-        return result;
-    }
+    VOTE_STR_ALLOCATION_AND_CHECK(true);
     char* tribe_string = string_variables[SECOND_ELEMENT];
     char* num_of_votes_string = string_variables[THIRD_ELEMENT];
     Map map_area_id = mapIdListGetMap(election->votes,area_id);
@@ -361,15 +375,9 @@ ElectionResult electionAddVote (Election election, int area_id, int tribe_id, in
 }
 
 ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, int num_of_votes) {
-    ElectionResult validation_result = addRemoveVoteValidation(election, area_id, tribe_id, num_of_votes);
-    if(validation_result != ELECTION_SUCCESS) {
-        return validation_result;
-    }
+    VOTE_RESOURCES_VALIDATATION; 
     char* string_variables[ADD_REMOVE_VOTE_VARIABLES];
-    ElectionResult result = allocateStrVariables(election, area_id, tribe_id, num_of_votes, string_variables,false);
-    if (result != ELECTION_SUCCESS) {
-        return result;
-    }
+    VOTE_STR_ALLOCATION_AND_CHECK(false);
     char* tribe_string = string_variables[SECOND_ELEMENT];
     Map map_area_id = mapIdListGetMap(election->votes,area_id);
     if(map_area_id == NULL) {
@@ -382,7 +390,7 @@ ElectionResult electionRemoveVote(Election election, int area_id, int tribe_id, 
     }
     int current_num_of_votes = convertStringToInt(mapGet(map_area_id, tribe_string));
     SSCANF_CHECK_AND_FREE(current_num_of_votes, tribe_string, ELECTION_ERROR);
-    if (current_num_of_votes < num_of_votes) { //if the user wants to remove more votes then the current votes, enters 0.
+    if (current_num_of_votes < num_of_votes) { //if the user removes more votes then the current votes, enters 0.
         num_of_votes = current_num_of_votes;
     }
     char* num_of_votes_update_string = convertIntToString(current_num_of_votes - num_of_votes);
