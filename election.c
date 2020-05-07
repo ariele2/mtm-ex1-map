@@ -101,7 +101,9 @@ static int countDigits(int number) {
 
 // converts integer to string format (char*) and returns the string
 static char* convertIntToString(int number) {
-    assert(number>=0);
+    if (number < 0) {
+        return NULL;
+    }
     char* str_number= malloc(countDigits(number)+1);
     if(str_number == NULL){
         return NULL;
@@ -415,6 +417,9 @@ char* electionGetTribeName (Election election, int tribe_id){
         return NULL;
     }
     char *str_name = mapGet(election->tribes,str_id);
+    if (str_name == NULL) {
+        return NULL;
+    }
     FREE_TEMP_RESOURCES(str_id,NULL,NULL);
     char *returned_name = malloc(strlen(str_name)+1); //assuming the user frees it later
     if(returned_name == NULL){
