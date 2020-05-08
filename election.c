@@ -188,12 +188,9 @@ static int calculateLowestTribeId(Election election) {
     SSCANF_CHECK_AND_FREE(lowest_tribe_id,NULL, ELEMENT_NOT_FOUND); //no need to free
     MAP_FOREACH(tribes_iter, election->tribes) {
         int id_to_check = convertStringToInt(tribes_iter);
-        // if (id_to_check == ELEMENT_NOT_FOUND) {
-        //     return ELEMENT_NOT_FOUND;
-        // }
         SSCANF_CHECK_AND_FREE(id_to_check,NULL, ELEMENT_NOT_FOUND); //no need to free
     }
-    
+
     return lowest_tribe_id;
 }
 
