@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "keyValue.h"
 #include <assert.h>
+#include "utils.h"
 #define LOWER_CASE_A 'a'
 #define LOWER_CASE_Z 'z'
 #define SPACE ' '
@@ -73,16 +74,16 @@ static inline void freeResource(void* resource){
 }
 
 // checks the tribe and area name and returns true if the tribe/area name is valid
-static bool checkValidationTribeOrAreaName(const char* tribe_name) {
-    const char* tmp_ptr = tribe_name; //saving the position of the first letter
-    while (*tribe_name) {
-        if((*tribe_name > LOWER_CASE_Z || *tribe_name < LOWER_CASE_A)
-           && *tribe_name != SPACE ) {
+static bool checkValidationTribeOrAreaName(const char* name) {
+    const char* tmp_ptr = name; //saving the position of the first letter
+    while (*name) {
+        if((*name > LOWER_CASE_Z || *name < LOWER_CASE_A)
+           && *name != SPACE ) {
             return false;
         }
-        tribe_name++;
+        name++;
     }
-    tribe_name = tmp_ptr; //bringing back the pointer to the first letter
+    name = tmp_ptr; //bringing back the pointer to the first letter
     return true;
 }
 
@@ -187,11 +188,12 @@ static int calculateLowestTribeId(Election election) {
     SSCANF_CHECK_AND_FREE(lowest_tribe_id,NULL, ELEMENT_NOT_FOUND); //no need to free
     MAP_FOREACH(tribes_iter, election->tribes) {
         int id_to_check = convertStringToInt(tribes_iter);
-        if (id_to_check == ELEMENT_NOT_FOUND) {
-            return ELEMENT_NOT_FOUND;
-        }
+        // if (id_to_check == ELEMENT_NOT_FOUND) {
+        //     return ELEMENT_NOT_FOUND;
+        // }
         SSCANF_CHECK_AND_FREE(id_to_check,NULL, ELEMENT_NOT_FOUND); //no need to free
     }
+    
     return lowest_tribe_id;
 }
 
@@ -325,6 +327,7 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
         return ELECTION_AREA_ALREADY_EXIST;
     }
     if(!checkValidationTribeOrAreaName(area_name)){
+        FREE_TEMP_RESOURCES(str_id,NULL,NULL);
         return ELECTION_INVALID_NAME;
     }
     //at this stage we know that the key (area id) doesnt exist.
@@ -445,6 +448,7 @@ ElectionResult electionSetTribeName (Election election, int tribe_id, const char
         return ELECTION_TRIBE_NOT_EXIST;
     }
     if(!checkValidationTribeOrAreaName(tribe_name)){
+        FREE_TEMP_RESOURCES(str_id,NULL,NULL);
         return ELECTION_INVALID_NAME;
     }
     MapResult result = mapPut(election->tribes,str_id,tribe_name);
