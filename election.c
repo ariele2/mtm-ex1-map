@@ -124,16 +124,13 @@ static int convertStringToInt(const char* string) {
     return string_to_int;
 }
 
-//checks the inputs: election - not null, id - not negative, name - not null and valid. (id&name of the tribe or area).
+//checks the inputs: election - not null, id - not negative, name - not null. (id&name of the tribe or area).
 static ElectionResult addOrSetValidation (Election election, int id, const char* name) {
     if(election == NULL || name == NULL) {
         return ELECTION_NULL_ARGUMENT;
     }
     if (id < 0) {
         return ELECTION_INVALID_ID;
-    }
-    if(!checkValidationTribeOrAreaName(name)){
-        return ELECTION_INVALID_NAME;
     }
     return ELECTION_SUCCESS;
 }
@@ -300,6 +297,9 @@ ElectionResult electionAddTribe(Election election, int tribe_id, const char* tri
         FREE_TEMP_RESOURCES(str_id,NULL,NULL);
         return ELECTION_TRIBE_ALREADY_EXIST;
     }
+    if(!checkValidationTribeOrAreaName(tribe_name)){
+        return ELECTION_INVALID_NAME;
+    }
     //at this stage we know that the key (tribe id) doesnt exist.
     MapResult result = mapPut(election->tribes, str_id, tribe_name);
     if (result == MAP_OUT_OF_MEMORY) {
@@ -312,7 +312,7 @@ ElectionResult electionAddTribe(Election election, int tribe_id, const char* tri
 
 
 ElectionResult electionAddArea(Election election, int area_id, const char* area_name){
-    ElectionResult result = addOrSetValidation(election,area_id,area_name);
+    ElectionResult result = addOrSetValidation(election,area_id, area_name);
     if(result != ELECTION_SUCCESS){
         return result;
     }
@@ -323,6 +323,9 @@ ElectionResult electionAddArea(Election election, int area_id, const char* area_
     if(mapContains(election->areas,str_id)){
         FREE_TEMP_RESOURCES(str_id,NULL,NULL);
         return ELECTION_AREA_ALREADY_EXIST;
+    }
+    if(!checkValidationTribeOrAreaName(area_name)){
+        return ELECTION_INVALID_NAME;
     }
     //at this stage we know that the key (area id) doesnt exist.
     MapResult area_map_result = mapPut(election->areas, str_id, area_name);
@@ -441,6 +444,9 @@ ElectionResult electionSetTribeName (Election election, int tribe_id, const char
         FREE_TEMP_RESOURCES(str_id,NULL,NULL);
         return ELECTION_TRIBE_NOT_EXIST;
     }
+    if(!checkValidationTribeOrAreaName(tribe_name)){
+        return ELECTION_INVALID_NAME;
+    }
     MapResult result = mapPut(election->tribes,str_id,tribe_name);
     FREE_TEMP_RESOURCES(str_id,NULL,NULL);
     if(result == MAP_NULL_ARGUMENT){
@@ -517,6 +523,9 @@ Map electionComputeAreasToTribesMapping (Election election) {
     Map areas_to_tribes_mapping = mapCreate();
     if (areas_to_tribes_mapping == NULL) {
         return NULL;
+    }
+    if (mapGetSize(election->areas) == 0 || mapGetSize(election->tribes) == 0) { // no tribes or areas
+        return areas_to_tribes_mapping;
     }
     if(!electionComputeAreasToTribesMappingAux(election,areas_to_tribes_mapping)) { //no tribes in the map
         return NULL;
