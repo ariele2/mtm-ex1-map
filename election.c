@@ -297,6 +297,7 @@ ElectionResult electionAddTribe(Election election, int tribe_id, const char* tri
         return ELECTION_TRIBE_ALREADY_EXIST;
     }
     if(!checkValidationTribeOrAreaName(tribe_name)){
+        FREE_TEMP_RESOURCES(str_id,NULL,NULL);
         return ELECTION_INVALID_NAME;
     }
     //at this stage we know that the key (tribe id) doesnt exist.
@@ -421,6 +422,7 @@ char* electionGetTribeName (Election election, int tribe_id){
     }
     char *str_name = mapGet(election->tribes,str_id);
     if (str_name == NULL) {
+        FREE_TEMP_RESOURCES(str_id,NULL,NULL);
         return NULL;
     }
     FREE_TEMP_RESOURCES(str_id,NULL,NULL);
